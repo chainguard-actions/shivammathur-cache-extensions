@@ -12,8 +12,8 @@ jobs:
         uses: .
         with:
           php-version-file: '.php-version'
-          extensions: 'curl, zip'
-          key: 'test-key-file-v1'
+          extensions: 'curl, xml'
+          key: 'test-cache-key-file-v1'
       - name: Assert dir output is set
         env:
           DIR: ${{ steps.action.outputs.dir }}
