@@ -1,4 +1,4 @@
-name: Test basic usage with php-version
+name: Test usage with php-version-file
 on:
   workflow_dispatch:
 jobs:
@@ -6,12 +6,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create .php-version file
+        run: echo "8.1" > .php-version
       - id: action
         uses: .
         with:
-          php-version: '8.2'
-          extensions: 'mbstring, intl'
-          key: 'test-key-v1'
+          php-version-file: '.php-version'
+          extensions: 'curl, zip'
+          key: 'test-key-file-v1'
       - name: Assert dir output is set
         env:
           ACTUAL: ${{ steps.action.outputs.dir }}
