@@ -11,23 +11,23 @@ jobs:
         with:
           php-version: '8.2'
           extensions: 'mbstring, intl'
-          key: 'test-cache-key-v1'
+          key: 'test-key-v1'
       - name: Assert dir output is set
         env:
-          DIR: ${{ steps.action.outputs.dir }}
+          ACTUAL: ${{ steps.action.outputs.dir }}
         run: |
-          echo "dir: $DIR"
-          if [ -z "$DIR" ]; then
+          echo "actual dir: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
             echo "FAIL: expected dir output to be non-empty"
             exit 1
           fi
           echo "PASS"
       - name: Assert key output is set
         env:
-          KEY: ${{ steps.action.outputs.key }}
+          ACTUAL: ${{ steps.action.outputs.key }}
         run: |
-          echo "key: $KEY"
-          if [ -z "$KEY" ]; then
+          echo "actual key: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
             echo "FAIL: expected key output to be non-empty"
             exit 1
           fi
