@@ -1,0 +1,40 @@
+name: Test cache-extensions key determinism
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action-first
+        uses: .
+        with:
+          php-version: '8.3'
+          extensions: 'pdo, pdo_mysql, redis'
+          key: 'test-determinism-v1'
+      - id: action-second
+        uses: .
+        with:
+          php-version: '8.3'
+          extensions: 'pdo, pdo_mysql, redis'
+          key: 'test-determinism-v1'
+      - name: Assert both keys are identical
+        env:
+          KEY_FIRST: ${{ steps.action-first.outputs.key }}
+          KEY_SECOND: ${{ steps.action-second.outputs.key }}
+        run: |
+          echo "key_first:  $KEY_FIRST"
+          echo "key_second: $KEY_SECOND"
+          if [ -z "$KEY_FIRST" ]; then
+            echo "FAIL: first key is empty"
+            exit 1
+          fi
+          if [ -z "$KEY_SECOND" ]; then
+            echo "FAIL: second key is empty"
+            exit 1
+          fi
+          if [ "$KEY_FIRST" != "$KEY_SECOND" ]; then
+            echo "FAIL: same inputs should produce the same cache key"
+            exit 1
+          fi
+          echo "PASS: keys are identical ($KEY_FIRST)"
