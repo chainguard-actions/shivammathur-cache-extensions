@@ -1,0 +1,48 @@
+name: Test key uniqueness for different extensions
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action-set-a
+        uses: .
+        with:
+          php-version: '8.2'
+          extensions: 'mbstring, curl'
+          key: 'uniqueness-test-v1'
+      - id: action-set-b
+        uses: .
+        with:
+          php-version: '8.2'
+          extensions: 'gd, intl, zip'
+          key: 'uniqueness-test-v1'
+      - name: Assert both keys are set
+        env:
+          KEY_A: ${{ steps.action-set-a.outputs.key }}
+          KEY_B: ${{ steps.action-set-b.outputs.key }}
+        run: |
+          echo "key_a: $KEY_A"
+          echo "key_b: $KEY_B"
+          if [ -z "$KEY_A" ]; then
+            echo "FAIL: key_a is empty"
+            exit 1
+          fi
+          if [ -z "$KEY_B" ]; then
+            echo "FAIL: key_b is empty"
+            exit 1
+          fi
+          echo "PASS: both keys are set"
+      - name: Assert keys differ for different extension sets
+        env:
+          KEY_A: ${{ steps.action-set-a.outputs.key }}
+          KEY_B: ${{ steps.action-set-b.outputs.key }}
+        run: |
+          echo "key_a: $KEY_A"
+          echo "key_b: $KEY_B"
+          if [ "$KEY_A" = "$KEY_B" ]; then
+            echo "FAIL: expected different keys for different extension sets, but both are '$KEY_A'"
+            exit 1
+          fi
+          echo "PASS: keys differ as expected"
