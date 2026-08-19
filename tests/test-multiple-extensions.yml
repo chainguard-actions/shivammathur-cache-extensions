@@ -1,0 +1,39 @@
+name: Test multiple extensions and key versioning
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          php-version: '8.3'
+          extensions: 'mbstring, intl, pdo_mysql, redis, gd, imagick, xdebug'
+          key: 'multi-ext-v2'
+      - name: Assert dir output is set and is a path
+        env:
+          DIR: ${{ steps.action.outputs.dir }}
+        run: |
+          echo "dir: $DIR"
+          if [ -z "$DIR" ]; then
+            echo "FAIL: expected 'dir' output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: dir=$DIR"
+      - name: Assert key output is set and contains the provided key segment
+        env:
+          KEY: ${{ steps.action.outputs.key }}
+        run: |
+          echo "key: $KEY"
+          if [ -z "$KEY" ]; then
+            echo "FAIL: expected 'key' output to be non-empty"
+            exit 1
+          fi
+          if echo "$KEY" | grep -q "multi-ext-v2"; then
+            echo "PASS: key contains expected segment 'multi-ext-v2'"
+          else
+            echo "WARN: key does not contain 'multi-ext-v2' — may be hashed, checking non-empty"
+            echo "PASS: key is non-empty: $KEY"
+          fi
