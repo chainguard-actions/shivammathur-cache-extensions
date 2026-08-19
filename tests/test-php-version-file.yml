@@ -7,30 +7,31 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Create .php-version file
-        run: echo "8.1" > .php-version
-      - id: action
+        run: |
+          echo "8.1" > .php-version
+      - id: cache-ext
         uses: .
         with:
           php-version-file: '.php-version'
-          extensions: 'redis, xdebug'
-          key: 'test-key-file-v1'
+          extensions: 'curl, zip'
+          key: 'test-version-file-key-v1'
       - name: Assert dir output is set
         env:
-          ACTUAL: ${{ steps.action.outputs.dir }}
+          DIR: ${{ steps.cache-ext.outputs.dir }}
         run: |
-          echo "actual dir: $ACTUAL"
-          if [ -z "$ACTUAL" ]; then
+          echo "dir: $DIR"
+          if [ -z "$DIR" ]; then
             echo "FAIL: expected dir output to be non-empty"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: dir output is set to '$DIR'"
       - name: Assert key output is set
         env:
-          ACTUAL: ${{ steps.action.outputs.key }}
+          KEY: ${{ steps.cache-ext.outputs.key }}
         run: |
-          echo "actual key: $ACTUAL"
-          if [ -z "$ACTUAL" ]; then
+          echo "key: $KEY"
+          if [ -z "$KEY" ]; then
             echo "FAIL: expected key output to be non-empty"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: key output is set to '$KEY'"

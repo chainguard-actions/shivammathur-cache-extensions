@@ -1,0 +1,48 @@
+name: Test key uniqueness for different extensions
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: cache-ext-a
+        uses: .
+        with:
+          php-version: '8.2'
+          extensions: 'mbstring, redis'
+          key: 'uniqueness-test-v1'
+      - id: cache-ext-b
+        uses: .
+        with:
+          php-version: '8.2'
+          extensions: 'mbstring, gd'
+          key: 'uniqueness-test-v1'
+      - name: Assert both keys are set
+        env:
+          KEY_A: ${{ steps.cache-ext-a.outputs.key }}
+          KEY_B: ${{ steps.cache-ext-b.outputs.key }}
+        run: |
+          echo "key_a: $KEY_A"
+          echo "key_b: $KEY_B"
+          if [ -z "$KEY_A" ]; then
+            echo "FAIL: expected key_a output to be non-empty"
+            exit 1
+          fi
+          if [ -z "$KEY_B" ]; then
+            echo "FAIL: expected key_b output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: both keys are set"
+      - name: Assert different extensions produce different keys
+        env:
+          KEY_A: ${{ steps.cache-ext-a.outputs.key }}
+          KEY_B: ${{ steps.cache-ext-b.outputs.key }}
+        run: |
+          echo "key_a: $KEY_A"
+          echo "key_b: $KEY_B"
+          if [ "$KEY_A" = "$KEY_B" ]; then
+            echo "FAIL: expected different extensions to produce different cache keys"
+            exit 1
+          fi
+          echo "PASS: different extensions produce different cache keys"

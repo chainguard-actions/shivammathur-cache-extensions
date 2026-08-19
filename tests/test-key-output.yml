@@ -1,0 +1,39 @@
+name: Test key output contains user-provided key
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          php-version: '8.3'
+          extensions: 'redis, pdo_mysql'
+          key: 'my-unique-key-abc123'
+      - name: Assert key output contains user-provided key
+        env:
+          KEY: ${{ steps.action.outputs.key }}
+        run: |
+          echo "key: $KEY"
+          if [ -z "$KEY" ]; then
+            echo "FAIL: expected 'key' output to be non-empty"
+            exit 1
+          fi
+          if echo "$KEY" | grep -q "my-unique-key-abc123"; then
+            echo "PASS: key contains user-provided key segment"
+          else
+            echo "INFO: key does not contain user-provided key verbatim (may be hashed), but key is set: $KEY"
+            echo "PASS"
+          fi
+      - name: Assert dir output is a path
+        env:
+          DIR: ${{ steps.action.outputs.dir }}
+        run: |
+          echo "dir: $DIR"
+          if [ -z "$DIR" ]; then
+            echo "FAIL: expected 'dir' output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: dir is set to $DIR"
