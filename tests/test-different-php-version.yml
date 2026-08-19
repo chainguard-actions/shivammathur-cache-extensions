@@ -1,0 +1,48 @@
+name: Test cache-extensions with different PHP version
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action_81
+        uses: .
+        with:
+          php-version: '8.1'
+          extensions: 'curl, zip'
+          key: 'version-test-v1'
+      - id: action_83
+        uses: .
+        with:
+          php-version: '8.3'
+          extensions: 'curl, zip'
+          key: 'version-test-v1'
+      - name: Assert both keys are set
+        env:
+          KEY_81: ${{ steps.action_81.outputs.key }}
+          KEY_83: ${{ steps.action_83.outputs.key }}
+        run: |
+          echo "key for 8.1: $KEY_81"
+          echo "key for 8.3: $KEY_83"
+          if [ -z "$KEY_81" ]; then
+            echo "FAIL: expected key for PHP 8.1 to be non-empty"
+            exit 1
+          fi
+          if [ -z "$KEY_83" ]; then
+            echo "FAIL: expected key for PHP 8.3 to be non-empty"
+            exit 1
+          fi
+          echo "PASS: both keys are set"
+      - name: Assert keys differ between PHP versions
+        env:
+          KEY_81: ${{ steps.action_81.outputs.key }}
+          KEY_83: ${{ steps.action_83.outputs.key }}
+        run: |
+          echo "key for 8.1: $KEY_81"
+          echo "key for 8.3: $KEY_83"
+          if [ "$KEY_81" = "$KEY_83" ]; then
+            echo "FAIL: expected keys to differ between PHP 8.1 and 8.3"
+            exit 1
+          fi
+          echo "PASS: keys differ between PHP versions"

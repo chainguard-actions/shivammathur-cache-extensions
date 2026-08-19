@@ -6,32 +6,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Create php-version file
-        run: |
-          echo "8.1" > "$GITHUB_WORKSPACE/.php-version"
-      - id: action
+      - name: Create .php-version file
+        run: echo "8.1" > .php-version
+      - id: cache-ext
         uses: .
         with:
           php-version-file: '.php-version'
-          extensions: 'redis, curl'
-          key: 'test-key-file-v1'
+          extensions: 'curl, zip'
+          key: 'test-file-cache-v1'
       - name: Assert dir output is set
         env:
-          DIR: ${{ steps.action.outputs.dir }}
+          ACTUAL: ${{ steps.cache-ext.outputs.dir }}
         run: |
-          echo "dir: $DIR"
-          if [ -z "$DIR" ]; then
-            echo "FAIL: expected dir output to be non-empty"
+          echo "actual dir: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected 'dir' output to be non-empty"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: dir output is set to '$ACTUAL'"
       - name: Assert key output is set
         env:
-          KEY: ${{ steps.action.outputs.key }}
+          ACTUAL: ${{ steps.cache-ext.outputs.key }}
         run: |
-          echo "key: $KEY"
-          if [ -z "$KEY" ]; then
-            echo "FAIL: expected key output to be non-empty"
+          echo "actual key: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected 'key' output to be non-empty"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: key output is set to '$ACTUAL'"

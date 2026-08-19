@@ -1,0 +1,48 @@
+name: Test cache-extensions with different extensions produce different keys
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action_set_a
+        uses: .
+        with:
+          php-version: '8.2'
+          extensions: 'mbstring, curl'
+          key: 'ext-test-v1'
+      - id: action_set_b
+        uses: .
+        with:
+          php-version: '8.2'
+          extensions: 'gd, imagick'
+          key: 'ext-test-v1'
+      - name: Assert both dir outputs are set
+        env:
+          DIR_A: ${{ steps.action_set_a.outputs.dir }}
+          DIR_B: ${{ steps.action_set_b.outputs.dir }}
+        run: |
+          echo "dir for set A: $DIR_A"
+          echo "dir for set B: $DIR_B"
+          if [ -z "$DIR_A" ]; then
+            echo "FAIL: expected dir for extension set A to be non-empty"
+            exit 1
+          fi
+          if [ -z "$DIR_B" ]; then
+            echo "FAIL: expected dir for extension set B to be non-empty"
+            exit 1
+          fi
+          echo "PASS: both dir outputs are set"
+      - name: Assert keys differ between extension sets
+        env:
+          KEY_A: ${{ steps.action_set_a.outputs.key }}
+          KEY_B: ${{ steps.action_set_b.outputs.key }}
+        run: |
+          echo "key for set A: $KEY_A"
+          echo "key for set B: $KEY_B"
+          if [ "$KEY_A" = "$KEY_B" ]; then
+            echo "FAIL: expected keys to differ between different extension sets"
+            exit 1
+          fi
+          echo "PASS: keys differ between extension sets"

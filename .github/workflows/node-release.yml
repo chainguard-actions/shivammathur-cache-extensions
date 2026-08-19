@@ -1,0 +1,60 @@
+name: Node release workflow
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      skip:
+        description: Skip release to repository
+        required: false
+      tag:
+        description: Tag name
+        required: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout release
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Checkout tag
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          ref: ${{ github.event.inputs.tag }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.x'
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies and add lib
+        run: |
+          npm install
+          npm run build
+          sed -i -e '/lib\//d' .gitignore
+
+      - name: Publish to NPM
+        if: "!contains(github.event.inputs.skip, 'skip-npm')"
+        run: npm publish --access public
+
+      - name: Change to GitHub Packages registry
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          registry-url: https://npm.pkg.github.com
+          scope: '@shivammathur'
+
+      - name: Patch package.json
+        run: |
+          sed -i 's#"name": "#"name": "@shivammathur/#' package.json
+      - name: Publish to GitHub Packages
+        if: "!contains(github.event.inputs.skip, 'skip-github-packages')"
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

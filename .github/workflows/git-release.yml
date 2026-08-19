@@ -1,0 +1,134 @@
+name: Git release workflow
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 15 * * *'
+permissions: {}
+jobs:
+  update:
+    name: update
+    runs-on: ${{ matrix.os }}
+    permissions:
+      actions: write
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-22.04]
+    steps:
+      - name: Update lists
+        run: |
+          . /etc/os-release
+          dpkg -l | awk '($1 == "ii") && ($2 ~ /^lib|lib$/) { print $2 }' | sed 's/:amd64//' > /tmp/"$VERSION_CODENAME"-libs
+      - name: Upload Artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: lists-${{ matrix.os }}
+          path: |
+            /tmp/*-libs
+
+  sync:
+    name: sync
+    needs: update
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: develop
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.x'
+      - name: Download lists
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: lists-*
+          merge-multiple: true
+          path: src/lists
+      - name: Add brew to PATH
+        run: echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
+      - name: Update darwin extensions list
+        run: |
+          brew tap shivammathur/extensions
+          brew trust shivammathur/extensions || true
+          formula_dir="$(brew --repository shivammathur/extensions)/Formula"
+          test -d "$formula_dir"
+          find "$formula_dir" -maxdepth 1 -type f -name '*.rb' -exec basename {} .rb \; \
+            | sed 's/@[0-9.]*$//' \
+            | sed 's/^phpredis$/redis/' \
+            | grep -Ev '^(firebird-client|imap-uw|libcouchbase)$' \
+            | sort -u > src/lists/darwin-extensions
+      - name: Update tags and branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.repository }}
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          push_branch() {
+            ref=$1
+            git push "https://${REPO_OWNER}:${GIT_TOKEN}@github.com/${REPO_NAME}.git" "refs/heads/$ref:refs/heads/$ref"
+          }
+          push_tag() {
+            ref=$1
+            git push "https://${REPO_OWNER}:${GIT_TOKEN}@github.com/${REPO_NAME}.git" "refs/tags/$ref"
+          }
+          force_tag() {
+            ref=$1
+            git push -f "https://${REPO_OWNER}:${GIT_TOKEN}@github.com/${REPO_NAME}.git" "refs/tags/$ref"
+          }
+          git config --local user.email "$bot_user_id+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git fetch --force --tags origin develop main releases/v1
+          semver=$(git for-each-ref --sort=version:refname --format '%(refname:short)' refs/tags | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | tail -n 1 || true)
+          current_version=$(node -p "require('./package.json').version")
+          dirty=false
+          if [ "$(git status --porcelain=v1 2>/dev/null | wc -l | tr -d ' ')" != "0" ]; then
+            dirty=true
+          fi
+          needs_release=false
+          if [ "$dirty" = "true" ] || [ -z "$semver" ] || [ "$(git rev-parse HEAD)" != "$(git rev-list -n 1 "$semver")" ]; then
+            needs_release=true
+          fi
+          if [ "$needs_release" != "true" ]; then
+            exit 0
+          fi
+          release_tag=""
+          if [ "$dirty" = "false" ] && [ "$(git log -1 --pretty=%s)" = "Release $current_version" ] && [ -n "$semver" ] && [ "$(printf '%s\n%s\n' "$semver" "$current_version" | sort -V | tail -n 1)" = "$current_version" ] && [ "$current_version" != "$semver" ]; then
+            release_tag="$current_version"
+          else
+            base_version="$current_version"
+            if [ -n "$semver" ] && [ "$(printf '%s\n%s\n' "$current_version" "$semver" | sort -V | tail -n 1)" = "$semver" ]; then
+              base_version="$semver"
+            fi
+            release_tag=$(node -e "const version = process.argv[1].split('.').map(Number); version[2] += 1; console.log(version.join('.'));" "$base_version")
+            npm version "$release_tag" --no-git-tag-version
+          fi
+          if [ "$(git status --porcelain=v1 2>/dev/null | wc -l | tr -d ' ')" != "0" ]; then
+            git add .
+            git commit -m "Release $release_tag"
+          fi
+          push_branch develop
+          rolling="v$(echo "$release_tag" | cut -d. -f1)"
+          for branch in main releases/$rolling; do
+            git checkout "$branch"
+            if [ "$(git rev-parse "$branch")" != "$(git rev-parse develop)" ]; then
+              git merge --ff-only develop || git merge --no-edit develop
+            fi
+            push_branch "$branch"
+          done
+          main_ref=$(git rev-parse main)
+          git tag -fa "$rolling" "$main_ref" -m "Update $rolling tag"
+          force_tag "$rolling"
+          git tag -fa "master" "$main_ref" -m "Update master tag"
+          force_tag "master"
+          if ! git ls-remote --exit-code --tags origin "refs/tags/$release_tag" >/dev/null 2>&1; then
+            git tag -fa "$release_tag" "$main_ref" -m "Release $release_tag"
+            push_tag "$release_tag"
+          fi
+          if ! gh release view "$release_tag" >/dev/null 2>&1; then
+            gh release create "$release_tag" --target "$main_ref" --title "$release_tag" --generate-notes
+          fi

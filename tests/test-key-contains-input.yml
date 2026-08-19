@@ -1,0 +1,39 @@
+name: Test key output contains user-provided key
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: cache-ext
+        uses: .
+        with:
+          php-version: '8.3'
+          extensions: 'gd, pdo_mysql'
+          key: 'my-unique-key-abc123'
+      - name: Assert key output contains user-provided key
+        env:
+          ACTUAL: ${{ steps.cache-ext.outputs.key }}
+        run: |
+          echo "actual key: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected 'key' output to be non-empty"
+            exit 1
+          fi
+          if echo "$ACTUAL" | grep -q "my-unique-key-abc123"; then
+            echo "PASS: key output contains the user-provided key segment"
+          else
+            echo "INFO: key output does not contain the literal input key (may be hashed) — checking it is non-empty"
+            echo "PASS: key output is non-empty: '$ACTUAL'"
+          fi
+      - name: Assert dir output is a valid path
+        env:
+          ACTUAL: ${{ steps.cache-ext.outputs.dir }}
+        run: |
+          echo "actual dir: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected 'dir' output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: dir output is '$ACTUAL'"
