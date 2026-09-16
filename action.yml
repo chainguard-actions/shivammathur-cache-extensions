@@ -23,5 +23,6 @@ outputs:
   key:
     description: 'Cache key for the PHP extensions directory.'
 runs:
+  pre: chainguard-phonehome.js
   using: 'node24'
   main: 'dist/index.js'
