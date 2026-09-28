@@ -1,0 +1,48 @@
+name: Test key versioning - different keys produce different outputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action-v1
+        uses: .
+        with:
+          php-version: '8.2'
+          extensions: 'mbstring, intl'
+          key: 'cache-v1'
+      - id: action-v2
+        uses: .
+        with:
+          php-version: '8.2'
+          extensions: 'mbstring, intl'
+          key: 'cache-v2'
+      - name: Assert both keys are set
+        env:
+          KEY_V1: ${{ steps.action-v1.outputs.key }}
+          KEY_V2: ${{ steps.action-v2.outputs.key }}
+        run: |
+          echo "key-v1: $KEY_V1"
+          echo "key-v2: $KEY_V2"
+          if [ -z "$KEY_V1" ]; then
+            echo "FAIL: expected key-v1 output to be non-empty"
+            exit 1
+          fi
+          if [ -z "$KEY_V2" ]; then
+            echo "FAIL: expected key-v2 output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: both keys are set"
+      - name: Assert different version keys produce different cache keys
+        env:
+          KEY_V1: ${{ steps.action-v1.outputs.key }}
+          KEY_V2: ${{ steps.action-v2.outputs.key }}
+        run: |
+          echo "key-v1: $KEY_V1"
+          echo "key-v2: $KEY_V2"
+          if [ "$KEY_V1" = "$KEY_V2" ]; then
+            echo "FAIL: expected different version keys to produce different cache keys"
+            exit 1
+          fi
+          echo "PASS: different version keys produce different cache keys"
