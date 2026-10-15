@@ -1,0 +1,56 @@
+name: Test multiple extensions and key uniqueness
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action-a
+        uses: .
+        with:
+          php-version: '8.3'
+          extensions: 'mbstring, curl, json, xml, zip'
+          key: 'test-multi-v1'
+      - id: action-b
+        uses: .
+        with:
+          php-version: '8.3'
+          extensions: 'mbstring, curl, json, xml, zip'
+          key: 'test-multi-v2'
+      - name: Assert dir output is set for action-a
+        env:
+          DIR: ${{ steps.action-a.outputs.dir }}
+        run: |
+          echo "dir (a): $DIR"
+          if [ -z "$DIR" ]; then
+            echo "FAIL: expected dir output to be non-empty for action-a"
+            exit 1
+          fi
+          echo "PASS: dir=$DIR"
+      - name: Assert key output is set for action-a
+        env:
+          KEY: ${{ steps.action-a.outputs.key }}
+        run: |
+          echo "key (a): $KEY"
+          if [ -z "$KEY" ]; then
+            echo "FAIL: expected key output to be non-empty for action-a"
+            exit 1
+          fi
+          echo "PASS: key=$KEY"
+      - name: Assert keys differ when version key differs
+        env:
+          KEY_A: ${{ steps.action-a.outputs.key }}
+          KEY_B: ${{ steps.action-b.outputs.key }}
+        run: |
+          echo "key_a: $KEY_A"
+          echo "key_b: $KEY_B"
+          if [ -z "$KEY_A" ] || [ -z "$KEY_B" ]; then
+            echo "FAIL: one or both keys are empty"
+            exit 1
+          fi
+          if [ "$KEY_A" = "$KEY_B" ]; then
+            echo "FAIL: expected keys to differ when 'key' input differs"
+            exit 1
+          fi
+          echo "PASS: keys are different as expected"
