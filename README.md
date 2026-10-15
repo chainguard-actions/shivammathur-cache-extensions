@@ -14,6 +14,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | 1.15.0 | [`1.15.0`](https://github.com/chainguard-actions/shivammathur-cache-extensions/tree/1.15.0) | [`50000e7`](https://github.com/shivammathur/cache-extensions/commit/50000e7030dd3fa176964a8fbbbd9e4b560fe4d4) |
 | 1.15.1 | [`1.15.1`](https://github.com/chainguard-actions/shivammathur-cache-extensions/tree/1.15.1) | [`de3c642`](https://github.com/shivammathur/cache-extensions/commit/de3c642a5fce0ef91581a1c9831e229f525196d6) |
 | 1.15.2 | [`1.15.2`](https://github.com/chainguard-actions/shivammathur-cache-extensions/tree/1.15.2) | [`22e2445`](https://github.com/shivammathur/cache-extensions/commit/22e24453af1bf3851994136f122ce065ab828a74) |
+| 1.15.3 | [`1.15.3`](https://github.com/chainguard-actions/shivammathur-cache-extensions/tree/1.15.3) | [`2abd2f0`](https://github.com/shivammathur/cache-extensions/commit/2abd2f0f7e31e52e198f67f882dea153f87bc11b) |
 | v1 | [`v1`](https://github.com/chainguard-actions/shivammathur-cache-extensions/tree/v1) | [`50000e7`](https://github.com/shivammathur/cache-extensions/commit/50000e7030dd3fa176964a8fbbbd9e4b560fe4d4) |
 
 ## Privacy
