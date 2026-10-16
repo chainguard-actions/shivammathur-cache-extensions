@@ -1,0 +1,48 @@
+name: Test key uniqueness with different user keys
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action-v1
+        uses: .
+        with:
+          php-version: '8.2'
+          extensions: 'mbstring'
+          key: 'unique-key-v1'
+      - id: action-v2
+        uses: .
+        with:
+          php-version: '8.2'
+          extensions: 'mbstring'
+          key: 'unique-key-v2'
+      - name: Assert both keys are non-empty
+        env:
+          KEY1: ${{ steps.action-v1.outputs.key }}
+          KEY2: ${{ steps.action-v2.outputs.key }}
+        run: |
+          echo "key1: $KEY1"
+          echo "key2: $KEY2"
+          if [ -z "$KEY1" ]; then
+            echo "FAIL: key1 is empty"
+            exit 1
+          fi
+          if [ -z "$KEY2" ]; then
+            echo "FAIL: key2 is empty"
+            exit 1
+          fi
+          echo "PASS: both keys are non-empty"
+      - name: Assert keys are different
+        env:
+          KEY1: ${{ steps.action-v1.outputs.key }}
+          KEY2: ${{ steps.action-v2.outputs.key }}
+        run: |
+          echo "key1: $KEY1"
+          echo "key2: $KEY2"
+          if [ "$KEY1" = "$KEY2" ]; then
+            echo "FAIL: expected different keys for different user key inputs, but got the same: $KEY1"
+            exit 1
+          fi
+          echo "PASS: keys are different as expected"
