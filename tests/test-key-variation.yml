@@ -1,0 +1,57 @@
+name: Test cache key determinism and extension filtering
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: base
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: cache-v1
+      - id: same
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: cache-v1
+      - id: disabled
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring, :xdebug
+          key: cache-v1
+      - id: otherkey
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: cache-v2
+      - id: otherext
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring, intl
+          key: cache-v1
+      - name: Assert key behavior
+        env:
+          BASE: ${{ steps.base.outputs.key }}
+          SAME: ${{ steps.same.outputs.key }}
+          DISABLED: ${{ steps.disabled.outputs.key }}
+          OTHERKEY: ${{ steps.otherkey.outputs.key }}
+          OTHEREXT: ${{ steps.otherext.outputs.key }}
+        run: |
+          echo "base:     $BASE"
+          echo "same:     $SAME"
+          echo "disabled: $DISABLED"
+          echo "otherkey: $OTHERKEY"
+          echo "otherext: $OTHEREXT"
+          [ -n "$BASE" ] || { echo "FAIL: base key empty"; exit 1; }
+          [ "$BASE" = "$SAME" ] || { echo "FAIL: identical inputs gave different keys"; exit 1; }
+          [ "$BASE" = "$DISABLED" ] || { echo "FAIL: ':'-prefixed extension should be filtered out of the key"; exit 1; }
+          [ -n "$OTHERKEY" ] && [ "$BASE" != "$OTHERKEY" ] || { echo "FAIL: different key input should change cache key"; exit 1; }
+          [ -n "$OTHEREXT" ] && [ "$BASE" != "$OTHEREXT" ] || { echo "FAIL: different extensions should change cache key"; exit 1; }
+          echo "PASS"

@@ -1,0 +1,36 @@
+name: Test php-version-file input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create PHP version file
+        run: echo "5.4" > "$GITHUB_WORKSPACE/php-version-test.txt"
+      - id: action
+        uses: .
+        with:
+          php-version-file: php-version-test.txt
+          extensions: mbstring
+          key: cache-v1
+      - name: Assert dir output reflects PHP 5.4
+        env:
+          ACTUAL: ${{ steps.action.outputs.dir }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "/usr/local/php/5.4/lib/php/extensions/no-debug-non-zts-20100525" ]; then
+            echo "FAIL: unexpected dir"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert key output reflects PHP 5.4
+        env:
+          ACTUAL: ${{ steps.action.outputs.key }}
+        run: |
+          echo "actual: $ACTUAL"
+          if ! echo "$ACTUAL" | grep -qE '^Linux-.*-5\.4-[0-9a-f]{64}-[0-9]{8}$'; then
+            echo "FAIL: key does not match expected format"
+            exit 1
+          fi
+          echo "PASS"
