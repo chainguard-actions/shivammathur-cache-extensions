@@ -1,0 +1,34 @@
+name: Test php-version-file input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          php-version-file: tests/fixtures/php-version
+          extensions: mbstring
+          key: file-v1
+      - name: Assert dir output uses PHP 5.4 API version
+        env:
+          ACTUAL: ${{ steps.action.outputs.dir }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "/usr/local/php/5.4/lib/php/extensions/no-debug-non-zts-20100525" ]; then
+            echo "FAIL: unexpected dir"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert key contains version 5.4
+        env:
+          ACTUAL: ${{ steps.action.outputs.key }}
+        run: |
+          echo "actual: $ACTUAL"
+          if ! echo "$ACTUAL" | grep -qE '^Linux-.*-5\.4-[0-9a-f]{64}-[0-9]{8}$'; then
+            echo "FAIL: key does not reference PHP 5.4"
+            exit 1
+          fi
+          echo "PASS"

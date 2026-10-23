@@ -1,0 +1,33 @@
+name: Test colon-prefixed extensions are filtered
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: plain
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl
+          key: filter-v1
+      - id: withdisabled
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl, :opcache
+          key: filter-v1
+      - name: Assert disabled extensions do not affect key
+        env:
+          PLAIN: ${{ steps.plain.outputs.key }}
+          WITHDISABLED: ${{ steps.withdisabled.outputs.key }}
+        run: |
+          echo "plain:        $PLAIN"
+          echo "withdisabled: $WITHDISABLED"
+          if [ -z "$PLAIN" ]; then echo "FAIL: empty key"; exit 1; fi
+          if [ "$PLAIN" != "$WITHDISABLED" ]; then
+            echo "FAIL: ':opcache' should have been filtered out of the key"
+            exit 1
+          fi
+          echo "PASS"

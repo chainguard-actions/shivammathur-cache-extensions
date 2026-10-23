@@ -1,0 +1,50 @@
+name: Test basic usage
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl, pcov
+          key: cache-v1
+      - name: Assert dir output
+        env:
+          ACTUAL: ${{ steps.action.outputs.dir }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "/usr/local/php/5.5/lib/php/extensions/no-debug-non-zts-20121212" ]; then
+            echo "FAIL: unexpected dir"
+            exit 1
+          fi
+          if [ ! -d "$ACTUAL/deps" ]; then
+            echo "FAIL: $ACTUAL/deps was not created"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert key output
+        env:
+          ACTUAL: ${{ steps.action.outputs.key }}
+        run: |
+          echo "actual: $ACTUAL"
+          if ! echo "$ACTUAL" | grep -qE '^Linux-[A-Za-z0-9._]*-[A-Za-z0-9_]+-5\.5-[0-9a-f]{64}-[0-9]{8}$'; then
+            echo "FAIL: key does not match expected format"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert RUNNER_TEMP files written
+        env:
+          KEY: ${{ steps.action.outputs.key }}
+          DIR: ${{ steps.action.outputs.dir }}
+        run: |
+          echo "temp key: $(cat "$RUNNER_TEMP/key")"
+          echo "temp dir: $(cat "$RUNNER_TEMP/dir")"
+          if [ "$(cat "$RUNNER_TEMP/key")" != "$KEY" ] || [ "$(cat "$RUNNER_TEMP/dir")" != "$DIR" ]; then
+            echo "FAIL: RUNNER_TEMP files do not match outputs"
+            exit 1
+          fi
+          echo "PASS"

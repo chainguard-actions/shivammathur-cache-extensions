@@ -1,0 +1,48 @@
+name: Test cache key versioning
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: first
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl
+          key: key-a
+      - id: same
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl
+          key: key-a
+      - id: different
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl
+          key: key-b
+      - id: otherext
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl, xdebug
+          key: key-a
+      - name: Assert keys
+        env:
+          FIRST: ${{ steps.first.outputs.key }}
+          SAME: ${{ steps.same.outputs.key }}
+          DIFFERENT: ${{ steps.different.outputs.key }}
+          OTHEREXT: ${{ steps.otherext.outputs.key }}
+        run: |
+          echo "first:     $FIRST"
+          echo "same:      $SAME"
+          echo "different: $DIFFERENT"
+          echo "otherext:  $OTHEREXT"
+          if [ -z "$FIRST" ]; then echo "FAIL: empty key"; exit 1; fi
+          if [ "$FIRST" != "$SAME" ]; then echo "FAIL: identical inputs produced different keys"; exit 1; fi
+          if [ "$FIRST" = "$DIFFERENT" ]; then echo "FAIL: changing key input did not change cache key"; exit 1; fi
+          if [ "$FIRST" = "$OTHEREXT" ]; then echo "FAIL: changing extensions did not change cache key"; exit 1; fi
+          echo "PASS"
