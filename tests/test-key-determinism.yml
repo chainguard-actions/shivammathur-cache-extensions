@@ -1,0 +1,68 @@
+name: Test cache key determinism and sensitivity
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: first
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: cache-v1
+      - id: same
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: cache-v1
+      - id: ignored
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: 'mbstring,:opcache'
+          key: cache-v1
+      - id: otherkey
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: cache-v2
+      - id: otherext
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring, intl
+          key: cache-v1
+      - id: shared
+        uses: .
+        env:
+          share-cache-across-workflows: 'true'
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: cache-v1
+      - name: Assert key relationships
+        env:
+          FIRST: ${{ steps.first.outputs.key }}
+          SAME: ${{ steps.same.outputs.key }}
+          IGNORED: ${{ steps.ignored.outputs.key }}
+          OTHERKEY: ${{ steps.otherkey.outputs.key }}
+          OTHEREXT: ${{ steps.otherext.outputs.key }}
+          SHARED: ${{ steps.shared.outputs.key }}
+        run: |
+          echo "first:    $FIRST"
+          echo "same:     $SAME"
+          echo "ignored:  $IGNORED"
+          echo "otherkey: $OTHERKEY"
+          echo "otherext: $OTHEREXT"
+          echo "shared:   $SHARED"
+          if [ -z "$FIRST" ]; then echo "FAIL: empty key"; exit 1; fi
+          if [ "$FIRST" != "$SAME" ]; then echo "FAIL: identical inputs gave different keys"; exit 1; fi
+          if [ "$FIRST" != "$IGNORED" ]; then echo "FAIL: ':'-prefixed extension changed the key"; exit 1; fi
+          if [ "$FIRST" = "$OTHERKEY" ]; then echo "FAIL: key input did not change the key"; exit 1; fi
+          if [ "$FIRST" = "$OTHEREXT" ]; then echo "FAIL: extensions did not change the key"; exit 1; fi
+          if [ -z "$SHARED" ] || [ "$FIRST" = "$SHARED" ]; then echo "FAIL: share-cache-across-workflows did not change the key"; exit 1; fi
+          echo "PASS"

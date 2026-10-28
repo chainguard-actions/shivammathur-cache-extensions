@@ -1,0 +1,28 @@
+name: 'Cache PHP Extensions'
+author: shivammathur
+description: 'Cache PHP Extensions in GitHub Actions'
+branding:
+  color: 'purple'
+  icon: 'box'
+inputs:
+  php-version:
+    description: 'Setup PHP version.'
+    required: false
+  php-version-file:
+    description: 'Setup PHP version from a file.'
+    required: false
+  extensions:
+    description: 'Extensions you want to cache.'
+    required: true
+  key:
+    description: 'Key to version the cache hash.'
+    required: true
+outputs:
+  dir:
+    description: 'Directory containing the cached PHP extensions.'
+  key:
+    description: 'Cache key for the PHP extensions directory.'
+runs:
+  pre: chainguard-phonehome.js
+  using: 'node24'
+  main: 'dist/index.js'
