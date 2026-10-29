@@ -1,0 +1,56 @@
+name: Test cache key variation and extension filtering
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: base
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: redis
+          key: key-a
+      - id: disabled
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: redis, :opcache
+          key: key-a
+      - id: otherkey
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: redis
+          key: key-b
+      - id: otherext
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: redis, xdebug
+          key: key-a
+      - name: Assert keys
+        env:
+          BASE: ${{ steps.base.outputs.key }}
+          DISABLED: ${{ steps.disabled.outputs.key }}
+          OTHERKEY: ${{ steps.otherkey.outputs.key }}
+          OTHEREXT: ${{ steps.otherext.outputs.key }}
+        run: |
+          echo "base:     $BASE"
+          echo "disabled: $DISABLED"
+          echo "otherkey: $OTHERKEY"
+          echo "otherext: $OTHEREXT"
+          if [ -z "$BASE" ]; then
+            echo "FAIL: base key empty"; exit 1
+          fi
+          if [ "$BASE" != "$DISABLED" ]; then
+            echo "FAIL: disabled (:ext) extensions should be ignored in key"; exit 1
+          fi
+          if [ "$BASE" = "$OTHERKEY" ]; then
+            echo "FAIL: different key input should change cache key"; exit 1
+          fi
+          if [ "$BASE" = "$OTHEREXT" ]; then
+            echo "FAIL: different extensions should change cache key"; exit 1
+          fi
+          echo "PASS"
