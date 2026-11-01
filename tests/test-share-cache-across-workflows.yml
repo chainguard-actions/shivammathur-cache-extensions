@@ -1,0 +1,38 @@
+name: Test share-cache-across-workflows flag
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: default
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: cache-v1
+      - id: shared
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: cache-v1
+        env:
+          share-cache-across-workflows: 'true'
+      - name: Assert shared key differs from default
+        env:
+          DEFAULT: ${{ steps.default.outputs.key }}
+          SHARED: ${{ steps.shared.outputs.key }}
+        run: |
+          echo "default: $DEFAULT"
+          echo "shared:  $SHARED"
+          if [ -z "$DEFAULT" ] || [ -z "$SHARED" ]; then
+            echo "FAIL: empty key"
+            exit 1
+          fi
+          if [ "$DEFAULT" = "$SHARED" ]; then
+            echo "FAIL: sharing across workflows should change the cache scope/key"
+            exit 1
+          fi
+          echo "PASS"

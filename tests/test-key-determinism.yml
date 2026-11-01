@@ -1,0 +1,48 @@
+name: Test cache key determinism and ignored extensions
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: plain
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: cache-v1
+      - id: ignored
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring, :opcache
+          key: cache-v1
+      - id: otherkey
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: cache-v2
+      - name: Assert keys
+        env:
+          PLAIN: ${{ steps.plain.outputs.key }}
+          IGNORED: ${{ steps.ignored.outputs.key }}
+          OTHER: ${{ steps.otherkey.outputs.key }}
+        run: |
+          echo "plain:   $PLAIN"
+          echo "ignored: $IGNORED"
+          echo "other:   $OTHER"
+          if [ -z "$PLAIN" ]; then
+            echo "FAIL: empty key"
+            exit 1
+          fi
+          if [ "$PLAIN" != "$IGNORED" ]; then
+            echo "FAIL: ':'-prefixed extension should not affect the key"
+            exit 1
+          fi
+          if [ "$PLAIN" = "$OTHER" ]; then
+            echo "FAIL: different key input should yield a different cache key"
+            exit 1
+          fi
+          echo "PASS"
