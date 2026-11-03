@@ -1,0 +1,36 @@
+name: Test extensions prefixed with colon are ignored in key
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: plain
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: ignore-v1
+      - id: with-ignored
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring,:opcache
+          key: ignore-v1
+      - name: Assert ignored extension does not affect key
+        env:
+          K1: ${{ steps.plain.outputs.key }}
+          K2: ${{ steps.with-ignored.outputs.key }}
+        run: |
+          echo "plain: $K1"
+          echo "with-ignored: $K2"
+          if [ -z "$K1" ]; then
+            echo "FAIL: empty key"
+            exit 1
+          fi
+          if [ "$K1" != "$K2" ]; then
+            echo "FAIL: ':opcache' should be ignored in the cache key"
+            exit 1
+          fi
+          echo "PASS"

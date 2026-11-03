@@ -1,0 +1,64 @@
+name: Test cache key determinism and key input sensitivity
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: first
+        uses: .
+        with:
+          php-version: '5.3'
+          extensions: mbstring, xml
+          key: cache-v1
+      - id: second
+        uses: .
+        with:
+          php-version: '5.3'
+          extensions: mbstring, xml
+          key: cache-v1
+      - id: third
+        uses: .
+        with:
+          php-version: '5.3'
+          extensions: mbstring, xml
+          key: cache-v2
+      - id: fourth
+        uses: .
+        with:
+          php-version: '5.3'
+          extensions: mbstring, curl
+          key: cache-v1
+      - name: Assert key behavior
+        env:
+          K1: ${{ steps.first.outputs.key }}
+          K2: ${{ steps.second.outputs.key }}
+          K3: ${{ steps.third.outputs.key }}
+          K4: ${{ steps.fourth.outputs.key }}
+          D1: ${{ steps.first.outputs.dir }}
+        run: |
+          echo "K1: $K1"; echo "K2: $K2"; echo "K3: $K3"; echo "K4: $K4"; echo "D1: $D1"
+          for k in "$K1" "$K2" "$K3" "$K4"; do
+            if ! echo "$k" | grep -qE '^Linux-.+-5\.3-[0-9a-f]{64}-20260314$'; then
+              echo "FAIL: key '$k' has unexpected format"
+              exit 1
+            fi
+          done
+          if [ "$K1" != "$K2" ]; then
+            echo "FAIL: identical inputs should produce identical keys"
+            exit 1
+          fi
+          if [ "$K1" = "$K3" ]; then
+            echo "FAIL: different key input should change the cache key"
+            exit 1
+          fi
+          if [ "$K1" = "$K4" ]; then
+            echo "FAIL: different extensions should change the cache key"
+            exit 1
+          fi
+          if [ "$D1" != "/usr/local/php/5.3/lib/php/extensions/no-debug-non-zts-20090626" ]; then
+            echo "FAIL: unexpected dir"
+            exit 1
+          fi
+          echo "PASS"
