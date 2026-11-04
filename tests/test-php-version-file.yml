@@ -1,0 +1,30 @@
+name: Test php-version-file input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          php-version-file: tests/fixtures/php-version
+          extensions: mbstring
+          key: cache-v1
+      - name: Assert outputs reflect version from file
+        env:
+          DIR: ${{ steps.action.outputs.dir }}
+          KEY: ${{ steps.action.outputs.key }}
+        run: |
+          echo "dir: $DIR"
+          echo "key: $KEY"
+          if [ "$DIR" != "/usr/local/php/5.5/lib/php/extensions/no-debug-non-zts-20121212" ]; then
+            echo "FAIL: unexpected dir"
+            exit 1
+          fi
+          if ! echo "$KEY" | grep -qE -- '-5\.5-[0-9a-f]{64}-'; then
+            echo "FAIL: key does not contain version 5.5"
+            exit 1
+          fi
+          echo "PASS"

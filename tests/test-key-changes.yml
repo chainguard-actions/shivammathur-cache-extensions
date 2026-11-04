@@ -1,0 +1,45 @@
+name: Test cache key is deterministic and depends on inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: first
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: key-one
+      - id: second
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: key-one
+      - id: third
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring
+          key: key-two
+      - id: fourth
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: mbstring, xml
+          key: key-one
+      - name: Assert keys
+        env:
+          K1: ${{ steps.first.outputs.key }}
+          K2: ${{ steps.second.outputs.key }}
+          K3: ${{ steps.third.outputs.key }}
+          K4: ${{ steps.fourth.outputs.key }}
+        run: |
+          echo "k1: $K1"; echo "k2: $K2"; echo "k3: $K3"; echo "k4: $K4"
+          if [ -z "$K1" ]; then echo "FAIL: empty key"; exit 1; fi
+          if [ "$K1" != "$K2" ]; then echo "FAIL: same inputs gave different keys"; exit 1; fi
+          if [ "$K1" = "$K3" ]; then echo "FAIL: key input did not change cache key"; exit 1; fi
+          if [ "$K1" = "$K4" ]; then echo "FAIL: extensions did not change cache key"; exit 1; fi
+          echo "PASS"
