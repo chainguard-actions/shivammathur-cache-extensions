@@ -1,4 +1,4 @@
-name: Test usage with php-version-file
+name: Test php-version-file input
 on:
   workflow_dispatch:
 jobs:
@@ -6,32 +6,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Create .php-version file
-        run: |
-          echo "8.1" > "$GITHUB_WORKSPACE/.php-version"
+      - name: Create PHP version file
+        run: echo "5.4" > "$RUNNER_TEMP/php-version-test"
       - id: action
         uses: .
         with:
-          php-version-file: '.php-version'
-          extensions: 'gd, intl'
-          key: 'test-file-key-v1'
-      - name: Assert dir output is set
+          php-version-file: ${{ runner.temp }}/php-version-test
+          extensions: redis
+          key: file-v1
+      - name: Assert dir output uses version from file
         env:
-          DIR: ${{ steps.action.outputs.dir }}
+          ACTUAL: ${{ steps.action.outputs.dir }}
         run: |
-          echo "dir: $DIR"
-          if [ -z "$DIR" ]; then
-            echo "FAIL: expected dir output to be non-empty"
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "/usr/local/php/5.4/lib/php/extensions/no-debug-non-zts-20100525" ]; then
+            echo "FAIL: unexpected dir"
             exit 1
           fi
-          echo "PASS: dir output is '$DIR'"
-      - name: Assert key output is set
+          echo "PASS"
+      - name: Assert key output uses version from file
         env:
-          KEY: ${{ steps.action.outputs.key }}
+          ACTUAL: ${{ steps.action.outputs.key }}
         run: |
-          echo "key: $KEY"
-          if [ -z "$KEY" ]; then
-            echo "FAIL: expected key output to be non-empty"
+          echo "actual: $ACTUAL"
+          if ! echo "$ACTUAL" | grep -qE '^Linux-[^-]*-[^-]+-5\.4-[0-9a-f]{64}-[0-9]{8}$'; then
+            echo "FAIL: key does not match expected format"
             exit 1
           fi
-          echo "PASS: key output is '$KEY'"
+          echo "PASS"

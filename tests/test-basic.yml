@@ -1,4 +1,4 @@
-name: Test basic usage with php-version
+name: Test basic usage
 on:
   workflow_dispatch:
 jobs:
@@ -9,26 +9,42 @@ jobs:
       - id: action
         uses: .
         with:
-          php-version: '8.2'
-          extensions: 'mbstring, curl, json'
-          key: 'test-key-v1'
-      - name: Assert dir output is set
+          php-version: '5.5'
+          extensions: intl, mbstring
+          key: cache-v1
+      - name: Assert dir output
+        env:
+          ACTUAL: ${{ steps.action.outputs.dir }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "/usr/local/php/5.5/lib/php/extensions/no-debug-non-zts-20121212" ]; then
+            echo "FAIL: unexpected dir"
+            exit 1
+          fi
+          if [ ! -d "$ACTUAL" ]; then
+            echo "FAIL: dir was not created"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert key output
+        env:
+          ACTUAL: ${{ steps.action.outputs.key }}
+        run: |
+          echo "actual: $ACTUAL"
+          if ! echo "$ACTUAL" | grep -qE '^Linux-[^-]*-[^-]+-5\.5-[0-9a-f]{64}-[0-9]{8}$'; then
+            echo "FAIL: key does not match expected format"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert RUNNER_TEMP files match outputs
         env:
           DIR: ${{ steps.action.outputs.dir }}
-        run: |
-          echo "dir: $DIR"
-          if [ -z "$DIR" ]; then
-            echo "FAIL: expected dir output to be non-empty"
-            exit 1
-          fi
-          echo "PASS: dir output is '$DIR'"
-      - name: Assert key output is set
-        env:
           KEY: ${{ steps.action.outputs.key }}
         run: |
-          echo "key: $KEY"
-          if [ -z "$KEY" ]; then
-            echo "FAIL: expected key output to be non-empty"
+          echo "dir file: $(cat "$RUNNER_TEMP/dir")"
+          echo "key file: $(cat "$RUNNER_TEMP/key")"
+          if [ "$(cat "$RUNNER_TEMP/dir")" != "$DIR" ] || [ "$(cat "$RUNNER_TEMP/key")" != "$KEY" ]; then
+            echo "FAIL: RUNNER_TEMP files do not match outputs"
             exit 1
           fi
-          echo "PASS: key output is '$KEY'"
+          echo "PASS"

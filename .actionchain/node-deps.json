@@ -3,7 +3,10 @@
   "entries": [
     {
       "path": "dist/index.js",
-      "status": "self_contained"
+      "status": "self_contained",
+      "warnings": [
+        "indirect-require: Indirect calls to \"require\" will not be bundled"
+      ]
     }
   ]
 }

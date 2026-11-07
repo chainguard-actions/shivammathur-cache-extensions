@@ -1,0 +1,48 @@
+name: Test key input versions the cache key
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: first
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl
+          key: key-a
+      - id: second
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl
+          key: key-a
+      - id: third
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl
+          key: key-b
+      - name: Assert keys
+        env:
+          K1: ${{ steps.first.outputs.key }}
+          K2: ${{ steps.second.outputs.key }}
+          K3: ${{ steps.third.outputs.key }}
+        run: |
+          echo "k1: $K1"
+          echo "k2: $K2"
+          echo "k3: $K3"
+          if [ -z "$K1" ] || [ -z "$K3" ]; then
+            echo "FAIL: empty key"
+            exit 1
+          fi
+          if [ "$K1" != "$K2" ]; then
+            echo "FAIL: same inputs produced different keys"
+            exit 1
+          fi
+          if [ "$K1" = "$K3" ]; then
+            echo "FAIL: different key input produced the same cache key"
+            exit 1
+          fi
+          echo "PASS"

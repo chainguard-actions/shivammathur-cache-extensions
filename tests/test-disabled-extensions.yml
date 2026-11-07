@@ -1,0 +1,48 @@
+name: Test disabled extensions are ignored
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: with_disabled
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl, :opcache
+          key: disabled-v1
+      - id: without_disabled
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl
+          key: disabled-v1
+      - id: other_ext
+        uses: .
+        with:
+          php-version: '5.5'
+          extensions: intl, xdebug
+          key: disabled-v1
+      - name: Assert disabled extension does not affect key
+        env:
+          K1: ${{ steps.with_disabled.outputs.key }}
+          K2: ${{ steps.without_disabled.outputs.key }}
+          K3: ${{ steps.other_ext.outputs.key }}
+        run: |
+          echo "with disabled: $K1"
+          echo "without disabled: $K2"
+          echo "other extension: $K3"
+          if [ -z "$K1" ] || [ -z "$K3" ]; then
+            echo "FAIL: empty key"
+            exit 1
+          fi
+          if [ "$K1" != "$K2" ]; then
+            echo "FAIL: disabled extension changed the key"
+            exit 1
+          fi
+          if [ "$K1" = "$K3" ]; then
+            echo "FAIL: adding an enabled extension did not change the key"
+            exit 1
+          fi
+          echo "PASS"
