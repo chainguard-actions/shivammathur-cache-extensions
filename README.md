@@ -23,7 +23,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | 1.15.7 | [`1.15.7`](https://github.com/chainguard-actions/shivammathur-cache-extensions/tree/1.15.7) | [`ef484fc`](https://github.com/shivammathur/cache-extensions/commit/ef484fc4b573eeecdc4f58d949eb6803357a93e4) | [`HARDENING.md`](https://github.com/chainguard-actions/shivammathur-cache-extensions/blob/1.15.7/HARDENING.md) |
 | 1.15.8 | [`1.15.8`](https://github.com/chainguard-actions/shivammathur-cache-extensions/tree/1.15.8) | [`c33688c`](https://github.com/shivammathur/cache-extensions/commit/c33688ce81fd884ddd70d51cadeb62b6fb974750) | [`HARDENING.md`](https://github.com/chainguard-actions/shivammathur-cache-extensions/blob/1.15.8/HARDENING.md) |
 | 1.15.9 | [`1.15.9`](https://github.com/chainguard-actions/shivammathur-cache-extensions/tree/1.15.9) | [`0fb23b7`](https://github.com/shivammathur/cache-extensions/commit/0fb23b7eed24220c5400222d717ba04d43beeef8) | [`HARDENING.md`](https://github.com/chainguard-actions/shivammathur-cache-extensions/blob/1.15.9/HARDENING.md) |
-| v1 | [`v1`](https://github.com/chainguard-actions/shivammathur-cache-extensions/tree/v1) | [`50000e7`](https://github.com/shivammathur/cache-extensions/commit/50000e7030dd3fa176964a8fbbbd9e4b560fe4d4) | [`HARDENING.md`](https://github.com/chainguard-actions/shivammathur-cache-extensions/blob/v1/HARDENING.md) |
+| v1 | [`v1`](https://github.com/chainguard-actions/shivammathur-cache-extensions/tree/v1) | [`695b1b4`](https://github.com/shivammathur/cache-extensions/commit/695b1b465eba861efe67cbbc31252c27f5ed253d) | [`HARDENING.md`](https://github.com/chainguard-actions/shivammathur-cache-extensions/blob/v1/HARDENING.md) |
 
 ## Privacy
 
