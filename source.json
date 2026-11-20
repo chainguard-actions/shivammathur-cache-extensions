@@ -1,6 +1,16 @@
 {
   "owner": "shivammathur",
   "repo": "cache-extensions",
-  "version": "",
-  "url": "https://github.com/shivammathur/cache-extensions"
+  "version": "1.15.12",
+  "commit_sha": "0769e8b0c165c62888174c0fe66557ca1616ae45",
+  "url": "https://github.com/shivammathur/cache-extensions",
+  "policy_sha": "374911c4be584df24e6da57af2d990570ef0f859",
+  "test_policy_sha": "843adf9e4b8f85d0c08b27b9d0b09dd094b54702",
+  "test_agent_version": "2",
+  "harden_agent_version": "2",
+  "dist_artifact": {
+    "gcs_uri": "gs://patch-actions-node-artifacts/dist-artifacts/shivammathur/cache-extensions/1.15.12/sha256-45629ca705e31dc342bc78c2fed7b5f7850e604b0088746370c1f995251fb5c2.tar.gz",
+    "sha256": "45629ca705e31dc342bc78c2fed7b5f7850e604b0088746370c1f995251fb5c2",
+    "size_bytes": 392950
+  }
 }
